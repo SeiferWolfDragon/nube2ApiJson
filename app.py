@@ -63,6 +63,29 @@ def get_alumno(id):
     return jsonify(alumno)
 
 # 🔹 Endpoint para agregar un nuevo alumno
+# 🔹 Endpoint para agregar un nuevo alumno
+@app.route('/alumnos', methods=['POST'])
+def create_alumno():
+    try:
+        data = request.json
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO alumnos (no_control, nombre, ape_P, ape_M, edad, promedio_global, semestre) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;",
+            (data['no_control'], data['nombre'], data['ape_P'], data['ape_M'], data['edad'], data['promedio_global'], data['semestre'])
+        )
+        new_id = cursor.fetchone()[0]
+        conn.commit()
+        return jsonify({"id": new_id, "message": "Alumno creado"}), 201
+    except psycopg2.Error as e:
+        return jsonify({"error": "Error en la base de datos", "details": str(e)}), 500
+    except KeyError as e:
+        return jsonify({"error": "Faltan datos en la solicitud", "missing_field": str(e)}), 400
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'conn' in locals():
+            conn.close()
 
 
 if __name__ == '__main__':
