@@ -111,7 +111,19 @@ def update_alumno(id):
     except psycopg2.Error as e:
         return jsonify({"error": "Error en la base de datos", "details": str(e)}), 500
 
-
+# 🔹 Endpoint para eliminar un alumno
+@app.route('/alumnos/<int:id>', methods=['DELETE'])
+def delete_alumno(id):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("DELETE FROM alumnos WHERE id = %s RETURNING id;", (id,))
+                deleted = cursor.fetchone()
+                if deleted is None:
+                    return jsonify({"error": "Alumno no encontrado"}), 404
+        return jsonify({"message": "Alumno eliminado"})
+    except psycopg2.Error as e:
+        return jsonify({"error": "Error en la base de datos", "details": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
