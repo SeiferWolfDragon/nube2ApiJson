@@ -88,5 +88,30 @@ def create_alumno():
             conn.close()
 
 
+# 🔹 Endpoint para actualizar un alumno
+@app.route('/alumnos/<int:id>', methods=['PUT'])
+def update_alumno(id):
+    try:
+        data = request.json
+        required_fields = ["no_control", "nombre", "ape_P", "ape_M", "edad", "promedio_global", "semestre"]
+        missing_fields = [field for field in required_fields if field not in data]
+        if missing_fields:
+            return jsonify({"error": "Faltan datos", "missing_fields": missing_fields}), 400
+
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE alumnos SET no_control=%s, nombre=%s, ape_P=%s, ape_M=%s, edad=%s, promedio_global=%s, semestre=%s WHERE id=%s RETURNING id;",
+                    (data['no_control'], data['nombre'], data['ape_P'], data['ape_M'], data['edad'], data['promedio_global'], data['semestre'], id)
+                )
+                updated = cursor.fetchone()
+                if updated is None:
+                    return jsonify({"error": "Alumno no encontrado"}), 404
+        return jsonify({"message": "Alumno actualizado"})
+    except psycopg2.Error as e:
+        return jsonify({"error": "Error en la base de datos", "details": str(e)}), 500
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
